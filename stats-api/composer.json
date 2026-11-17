@@ -19,6 +19,10 @@
     "test": "php artisan test"
   },
   "config": {
+    "platform": {
+      "php": "8.3.36"
+    },
+    "platform-check": false,
     "audit": {
       "block-insecure": false
     }

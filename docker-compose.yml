@@ -76,6 +76,7 @@ services:
       DB_PASSWORD: local_dev_password
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_CLIENT: predis
       APP_VERSION: local
     depends_on:
       postgres: {condition: service_healthy}
