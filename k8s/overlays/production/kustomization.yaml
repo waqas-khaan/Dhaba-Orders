@@ -1,0 +1,23 @@
+namespace: production
+resources:
+  - ../../base
+patches:
+  - path: namespace-patch.yaml
+  - path: replicas-patch.yaml
+  - path: ingress-patch.yaml
+images:
+  - name: example.invalid/dhaba/web
+    newName: REPLACE_ECR_REGISTRY/dhaba-TEAM/web
+    newTag: REPLACE_COMMIT_SHA
+  - name: example.invalid/dhaba/menu-api
+    newName: REPLACE_ECR_REGISTRY/dhaba-TEAM/menu-api
+    newTag: REPLACE_COMMIT_SHA
+  - name: example.invalid/dhaba/orders-api
+    newName: REPLACE_ECR_REGISTRY/dhaba-TEAM/orders-api
+    newTag: REPLACE_COMMIT_SHA
+  - name: example.invalid/dhaba/kitchen-worker
+    newName: REPLACE_ECR_REGISTRY/dhaba-TEAM/kitchen-worker
+    newTag: REPLACE_COMMIT_SHA
+  - name: example.invalid/dhaba/stats-api
+    newName: REPLACE_ECR_REGISTRY/dhaba-TEAM/stats-api
+    newTag: REPLACE_COMMIT_SHA
