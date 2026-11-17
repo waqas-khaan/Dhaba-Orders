@@ -1,0 +1,26 @@
+{
+  "name": "dhaba/stats-api",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "laravel/framework": "^11.0",
+    "predis/predis": "^2.3"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.0",
+    "phpstan/phpstan": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  },
+  "scripts": {
+    "test": "php artisan test"
+  },
+  "config": {
+    "audit": {
+      "block-insecure": false
+    }
+  }
+}

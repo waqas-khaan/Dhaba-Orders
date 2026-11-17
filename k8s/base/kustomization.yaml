@@ -1,0 +1,10 @@
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - redis.yaml
+  - web.yaml
+  - menu-api.yaml
+  - orders-api.yaml
+  - kitchen-worker.yaml
+  - stats-api.yaml
+  - ingress.yaml

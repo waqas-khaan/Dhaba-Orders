@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: menu-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: menu-api}
+  template:
+    metadata:
+      labels: {app: menu-api}
+    spec:
+      containers:
+        - name: menu-api
+          image: example.invalid/dhaba/menu-api:replace-me
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: DATABASE_URL, value: "postgresql://dhaba:$(POSTGRES_PASSWORD)@postgres:5432/dhaba"}
+            - {name: REDIS_URL, value: "redis://redis:6379/0"}
+          ports: [{containerPort: 8000}]
+          readinessProbe:
+            httpGet: {path: /health, port: 8000}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health, port: 8000}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: menu-api
+spec:
+  selector: {app: menu-api}
+  ports:
+    - port: 8000
+      targetPort: 8000
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: menu-api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: menu-api}

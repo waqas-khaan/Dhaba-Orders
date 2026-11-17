@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kitchen-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: kitchen-worker}
+  template:
+    metadata:
+      labels: {app: kitchen-worker}
+    spec:
+      containers:
+        - name: kitchen-worker
+          image: example.invalid/dhaba/kitchen-worker:replace-me
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: DATABASE_URL, value: "jdbc:postgresql://postgres:5432/dhaba"}
+            - {name: DB_USER, value: dhaba}
+            - {name: DB_PASSWORD, valueFrom: {secretKeyRef: {name: dhaba-secrets, key: postgres-password}}}
+            - {name: REDIS_HOST, value: redis}
+            - {name: REDIS_PORT, value: "6379"}
+          readinessProbe:
+            exec: {command: ["/bin/sh","-c","test -n \"$(date)\""]}
+            periodSeconds: 10
+          livenessProbe:
+            exec: {command: ["/bin/sh","-c","test -n \"$(date)\""]}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kitchen-worker
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: kitchen-worker}
