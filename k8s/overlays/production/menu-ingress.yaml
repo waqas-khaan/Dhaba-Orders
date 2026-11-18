@@ -1,0 +1,21 @@
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dhaba-menu-api
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /menu$1$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: prod.falconsoftwares.com
+      http:
+        paths:
+          - path: /api/menu(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: menu-api
+                port:
+                  number: 8000

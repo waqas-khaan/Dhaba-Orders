@@ -12,12 +12,15 @@ spec:
     spec:
       containers:
         - name: stats-api
-          image: example.invalid/dhaba/stats-api:replace-me
+          image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-stats-api:latest
           imagePullPolicy: IfNotPresent
           env:
             - {name: APP_ENV, value: production}
             - {name: APP_DEBUG, value: "false"}
             - {name: APP_KEY, valueFrom: {secretKeyRef: {name: dhaba-secrets, key: app-key}}}
+            - {name: SESSION_DRIVER, value: "array"}
+            - {name: CACHE_STORE, value: "array"}
+            - {name: QUEUE_CONNECTION, value: "sync"}
             - {name: DB_CONNECTION, value: pgsql}
             - {name: DB_HOST, value: postgres}
             - {name: DB_PORT, value: "5432"}
@@ -36,7 +39,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
-            requests: {cpu: 100m, memory: 128Mi}
+            requests: {cpu: 25m, memory: 128Mi}
             limits: {cpu: 500m, memory: 512Mi}
 
 ---

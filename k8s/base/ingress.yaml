@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: dhaba
 spec:
-  ingressClassName: traefik
+  ingressClassName: nginx
   rules:
     - host: staging.TEAM.test
       http:
