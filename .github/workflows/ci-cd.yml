@@ -20,7 +20,7 @@ jobs:
         run: |
           cd menu-api
           pip install -r requirements.txt -r requirements-dev.txt
-          pytest
+          python -m pytest
 
       - name: Java tests
         run: cd kitchen-worker && mvn -q test
