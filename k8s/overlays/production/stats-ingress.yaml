@@ -22,3 +22,10 @@ spec:
                 name: stats-api
                 port:
                   number: 8081
+          - path: /api/heath(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: stats-api
+                port:
+                  number: 8081

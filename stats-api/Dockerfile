@@ -11,6 +11,9 @@ RUN composer dump-autoload --optimize --no-dev
 
 FROM php:8.3-fpm-alpine
 
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION}
+
 RUN apk add --no-cache nginx postgresql-dev libxml2-dev oniguruma-dev \
     && docker-php-ext-install pdo_pgsql mbstring xml \
     && addgroup -S app \

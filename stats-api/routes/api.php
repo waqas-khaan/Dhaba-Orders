@@ -9,4 +9,7 @@ Route::get('/stats', function () {
   Redis::setex('stats:last-read',60,(string)now());
   return response()->json(['total_orders'=>$total,'orders_per_minute'=>$since,'top_dish'=>$top?->dish_name ?? 'No orders']);
 });
-Route::get('/health', fn()=>response()->json(['status'=>'ok','version'=>env('APP_VERSION','dev')]));
+$health = fn()=>response()->json(['status'=>'ok','version'=>env('APP_VERSION','dev')]);
+
+Route::get('/health', $health);
+Route::get('/heath', $health);

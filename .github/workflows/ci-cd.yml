@@ -1,14 +1,17 @@
+
 name: CI/CD Pipeline
 
 on:
   pull_request:
     branches: [main]
+
   push:
     branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -48,9 +51,9 @@ jobs:
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: self-hosted
+
     steps:
       - uses: actions/checkout@v4
-
 
       - name: Build and push ECR images
         run: |
@@ -60,7 +63,17 @@ jobs:
             docker login --username AWS --password-stdin "$REG"
 
           for s in web menu-api orders-api kitchen-worker stats-api; do
-            docker build -t "$REG/dhaba-orders-$s:${{ github.sha }}" "./$s"
+            if [ "$s" = "stats-api" ]; then
+              docker build \
+                --build-arg APP_VERSION="${{ github.sha }}" \
+                -t "$REG/dhaba-orders-$s:${{ github.sha }}" \
+                "./$s"
+            else
+              docker build \
+                -t "$REG/dhaba-orders-$s:${{ github.sha }}" \
+                "./$s"
+            fi
+
             docker push "$REG/dhaba-orders-$s:${{ github.sha }}"
           done
 
@@ -86,6 +99,7 @@ jobs:
     needs: build
     runs-on: self-hosted
     environment: staging
+
     steps:
       - uses: actions/checkout@v4
 
@@ -107,6 +121,7 @@ jobs:
     needs: deploy-staging
     runs-on: self-hosted
     environment: production
+
     steps:
       - uses: actions/checkout@v4
 
