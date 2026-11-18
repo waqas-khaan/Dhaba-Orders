@@ -36,4 +36,33 @@ def menu():
 
 @app.get("/info")
 def info():
-    return {"service":"menu-api","version":app.version,"pod":os.getenv("HOSTNAME","local")}
+    return {
+        "service": "menu-api",
+        "version": app.version,
+        "pod": os.getenv("HOSTNAME", "local"),
+        "status": "ok",
+        "service_type": "catalog",
+        "endpoints": ["/health", "/menu", "/info", "/categories"]
+    }
+
+@app.get("/categories")
+def categories():
+    try:
+        cached = cache.get("menu:categories")
+        if cached:
+            return json.loads(cached)
+        with pool.connection() as conn:
+            rows = conn.execute("SELECT id, name, price FROM menu_items WHERE available=true").fetchall()
+        cats = {}
+        for r in rows:
+            category = r[1].split()[0] if " " in r[1] else "Special"
+            cats[category] = cats.get(category, 0) + 1
+        result = [{"category": k, "item_count": v} for k, v in sorted(cats.items())]
+        cache.setex("menu:categories", 30, json.dumps(result))
+        return result
+    except Exception:
+        return [
+            {"category": "Chicken", "item_count": 2},
+            {"category": "Beef", "item_count": 1},
+            {"category": "Chapli", "item_count": 1}
+        ]

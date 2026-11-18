@@ -2,6 +2,7 @@ package com.dhaba;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +33,7 @@ class OrderProcessor {
  private final StringRedisTemplate redis;
  private final JdbcTemplate jdbc;
  private final ObjectMapper mapper;
+ private final AtomicLong processedCount = new AtomicLong(0);
  OrderProcessor(StringRedisTemplate redis, JdbcTemplate jdbc, ObjectMapper mapper) {
   this.redis=redis; this.jdbc=jdbc; this.mapper=mapper;
  }
@@ -45,10 +47,21 @@ class OrderProcessor {
    jdbc.update("UPDATE orders SET status='cooking' WHERE id=?",id);
    Thread.sleep(700);
    jdbc.update("UPDATE orders SET status='ready' WHERE id=?",id);
+   processedCount.incrementAndGet();
   } catch(Exception ex) { System.err.println("Order processing failed: "+ex.getMessage()); }
  }
  @Scheduled(fixedRate=10000)
  public void heartbeat() {
-  redis.opsForValue().set("worker:heartbeat",Instant.now().toString());
+  String now = Instant.now().toString();
+  redis.opsForValue().set("worker:heartbeat", now);
+  try {
+   Map<String, Object> status = Map.of(
+    "status", "active",
+    "service", "kitchen-worker",
+    "timestamp", now,
+    "processed_count", processedCount.get()
+   );
+   redis.opsForValue().set("worker:status", mapper.writeValueAsString(status));
+  } catch(Exception ignored) {}
  }
 }
