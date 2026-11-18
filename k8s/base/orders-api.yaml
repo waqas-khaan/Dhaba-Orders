@@ -12,9 +12,10 @@ spec:
     spec:
       containers:
         - name: orders-api
-          image: example.invalid/dhaba/orders-api:replace-me
+          image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-orders-api:latest
           imagePullPolicy: IfNotPresent
           env:
+            - {name: POSTGRES_PASSWORD, valueFrom: {secretKeyRef: {name: dhaba-secrets, key: postgres-password}}}
             - {name: DATABASE_URL, value: "postgres://dhaba:$(POSTGRES_PASSWORD)@postgres:5432/dhaba?sslmode=disable"}
             - {name: REDIS_ADDR, value: "redis:6379"}
           ports: [{containerPort: 8080}]
@@ -27,7 +28,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
-            requests: {cpu: 100m, memory: 128Mi}
+            requests: {cpu: 25m, memory: 128Mi}
             limits: {cpu: 500m, memory: 512Mi}
 
 ---

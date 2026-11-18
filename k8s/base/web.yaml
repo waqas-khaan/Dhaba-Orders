@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: example.invalid/dhaba/web:replace-me
+          image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-web:latest
           imagePullPolicy: IfNotPresent
           ports: [{containerPort: 80}]
           readinessProbe:
@@ -24,7 +24,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
-            requests: {cpu: 100m, memory: 128Mi}
+            requests: {cpu: 25m, memory: 128Mi}
             limits: {cpu: 500m, memory: 512Mi}
 
 ---

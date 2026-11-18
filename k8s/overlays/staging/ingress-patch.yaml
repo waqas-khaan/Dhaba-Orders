@@ -1,20 +1,29 @@
+
 apiVersion: networking.k8s.io/v1
 kind: Ingress
-metadata: {name: dhaba}
+metadata:
+  name: dhaba
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
-    - host: staging.TEAM.test
+    - host: staging.falconsoftwares.com
       http:
         paths:
-          - path: /api/menu
-            pathType: Prefix
-            backend: {service: {name: menu-api, port: {number: 8000}}}
-          - path: /api/orders
-            pathType: Prefix
-            backend: {service: {name: orders-api, port: {number: 8080}}}
-          - path: /api/stats
-            pathType: Prefix
-            backend: {service: {name: stats-api, port: {number: 8081}}}
-          - path: /
-            pathType: Prefix
-            backend: {service: {name: web, port: {number: 80}}}
+          - path: /api/orders(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: orders-api
+                port:
+                  number: 8080
+
+          - path: /api/stats(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: stats-api
+                port:
+                  number: 8081
+
