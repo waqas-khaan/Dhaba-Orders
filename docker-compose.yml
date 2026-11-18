@@ -30,6 +30,7 @@ services:
       - backend
 
   menu-api:
+    build: ./menu-api
     image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-menu-api:latest
     environment:
       DATABASE_URL: postgresql://dhaba:local_dev_password@postgres:5432/dhaba
@@ -44,6 +45,7 @@ services:
       - backend
 
   orders-api:
+    build: ./orders-api
     image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-orders-api:latest
     environment:
       DATABASE_URL: postgres://dhaba:local_dev_password@postgres:5432/dhaba?sslmode=disable
@@ -58,6 +60,7 @@ services:
       - backend
 
   kitchen-worker:
+    build: ./kitchen-worker
     image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-kitchen-worker:latest
     environment:
       DATABASE_URL: jdbc:postgresql://postgres:5432/dhaba
@@ -75,6 +78,7 @@ services:
       - backend
 
   stats-api:
+    build: ./stats-api
     image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-stats-api:latest
     environment:
       APP_ENV: production
@@ -99,6 +103,7 @@ services:
       - backend
 
   web:
+    build: ./web
     image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-web:latest
     ports:
       - "8080:80"

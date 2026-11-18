@@ -30,7 +30,7 @@ Route::get('/stats', function () {
   ]);
 });
 
-$health = fn()=>response()->json(['status'=>'ok','version'=>env('APP_VERSION','dev')]);
+$health = require __DIR__ . '/health.php';
 
 Route::get('/health', $health);
 Route::get('/heath', $health);
