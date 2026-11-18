@@ -1,11 +1,10 @@
-
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: dhaba
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/rewrite-target: /orders$1$2
 spec:
   rules:
     - host: staging.falconsoftwares.com
@@ -18,12 +17,3 @@ spec:
                 name: orders-api
                 port:
                   number: 8080
-
-          - path: /api/stats(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: stats-api
-                port:
-                  number: 8081
-

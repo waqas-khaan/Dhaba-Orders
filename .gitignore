@@ -16,3 +16,4 @@ stats-api/.phpunit.result.cache
 
 # Java build files
 kitchen-worker/target/
+node_modules/

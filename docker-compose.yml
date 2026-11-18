@@ -13,57 +13,69 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-    networks: [backend]
+    networks:
+      - backend
 
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
-    volumes: [redisdata:/data]
+    volumes:
+      - redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 20
-    networks: [backend]
+    networks:
+      - backend
 
   menu-api:
-    build: ./menu-api
+    image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-menu-api:latest
     environment:
       DATABASE_URL: postgresql://dhaba:local_dev_password@postgres:5432/dhaba
       REDIS_URL: redis://redis:6379/0
-      APP_VERSION: local
+      APP_VERSION: production
     depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
-    networks: [backend]
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
 
   orders-api:
-    build: ./orders-api
+    image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-orders-api:latest
     environment:
       DATABASE_URL: postgres://dhaba:local_dev_password@postgres:5432/dhaba?sslmode=disable
       REDIS_ADDR: redis:6379
-      APP_VERSION: local
+      APP_VERSION: production
     depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
-    networks: [backend]
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
 
   kitchen-worker:
-    build: ./kitchen-worker
+    image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-kitchen-worker:latest
     environment:
       DATABASE_URL: jdbc:postgresql://postgres:5432/dhaba
       DB_USER: dhaba
       DB_PASSWORD: local_dev_password
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      APP_VERSION: local
+      APP_VERSION: production
     depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
-    networks: [backend]
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
 
   stats-api:
-    build: ./stats-api
+    image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-stats-api:latest
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
@@ -77,17 +89,25 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_CLIENT: predis
-      APP_VERSION: local
+      APP_VERSION: production
     depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
-    networks: [backend]
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
 
   web:
-    build: ./web
-    ports: ["8080:80"]
-    depends_on: [menu-api, orders-api, stats-api]
-    networks: [backend]
+    image: 139716594109.dkr.ecr.ap-southeast-2.amazonaws.com/dhaba-orders-web:latest
+    ports:
+      - "8080:80"
+    depends_on:
+      - menu-api
+      - orders-api
+      - stats-api
+    networks:
+      - backend
 
 volumes:
   pgdata:

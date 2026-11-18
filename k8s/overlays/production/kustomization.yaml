@@ -6,6 +6,7 @@ resources:
   - namespace-patch.yaml
   - web-ingress.yaml
   - menu-ingress.yaml
+  - stats-ingress.yaml
 
 patches:
   - path: replicas-patch.yaml

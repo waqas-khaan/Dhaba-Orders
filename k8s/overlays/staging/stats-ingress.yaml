@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dhaba-stats-api
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: staging.falconsoftwares.com
+      http:
+        paths:
+          - path: /api/stats(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: stats-api
+                port:
+                  number: 8081
+          - path: /api/health(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: stats-api
+                port:
+                  number: 8081

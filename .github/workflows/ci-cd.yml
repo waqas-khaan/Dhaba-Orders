@@ -9,7 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -49,9 +48,9 @@ jobs:
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: self-hosted
-
     steps:
       - uses: actions/checkout@v4
+
 
       - name: Build and push ECR images
         run: |
@@ -60,10 +59,17 @@ jobs:
           aws ecr get-login-password --region ap-southeast-2 | \
             docker login --username AWS --password-stdin "$REG"
 
-          for s in web menu-api orders-api kitchen-worker stats-api ops-monitor; do
-            docker build -t "$REG/dhaba/$s:${{ github.sha }}" "./$s"
-            docker push "$REG/dhaba/$s:${{ github.sha }}"
+          for s in web menu-api orders-api kitchen-worker stats-api; do
+            docker build -t "$REG/dhaba-orders-$s:${{ github.sha }}" "./$s"
+            docker push "$REG/dhaba-orders-$s:${{ github.sha }}"
           done
+
+          docker build \
+            -f ops-monitor/Dockerfile \
+            -t "$REG/dhaba-orders-ops-monitor:${{ github.sha }}" \
+            .
+
+          docker push "$REG/dhaba-orders-ops-monitor:${{ github.sha }}"
 
       - name: Slack notification
         if: always()
@@ -80,7 +86,6 @@ jobs:
     needs: build
     runs-on: self-hosted
     environment: staging
-
     steps:
       - uses: actions/checkout@v4
 
@@ -102,7 +107,6 @@ jobs:
     needs: deploy-staging
     runs-on: self-hosted
     environment: production
-
     steps:
       - uses: actions/checkout@v4
 
