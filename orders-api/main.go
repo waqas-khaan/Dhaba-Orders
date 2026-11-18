@@ -28,6 +28,41 @@ func health(w http.ResponseWriter, r *http.Request) {
  if err:=rdb.Ping(ctx).Err(); err!=nil { jsonOut(w,503,map[string]string{"status":"down"}); return }
  jsonOut(w,200,map[string]string{"status":"ok"})
 }
+func listOrders(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		jsonOut(w, 200, map[string]any{"orders": []any{}, "count": 0, "status": "ok"})
+		return
+	}
+	rows, err := db.QueryContext(r.Context(), "SELECT id, status, total, created_at FROM orders ORDER BY id DESC LIMIT 15")
+	if err != nil {
+		jsonOut(w, 500, map[string]string{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+	type RecentOrder struct {
+		ID        int64   `json:"id"`
+		Status    string  `json:"status"`
+		Total     float64 `json:"total"`
+		CreatedAt string  `json:"created_at"`
+	}
+	orders := []RecentOrder{}
+	for rows.Next() {
+		var o RecentOrder
+		var t time.Time
+		if err := rows.Scan(&o.ID, &o.Status, &o.Total, &t); err == nil {
+			o.CreatedAt = t.UTC().Format(time.RFC3339)
+			orders = append(orders, o)
+		}
+	}
+	jsonOut(w, 200, map[string]any{"orders": orders, "count": len(orders), "status": "ok"})
+}
+func handleOrders(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		listOrders(w, r)
+		return
+	}
+	createOrder(w, r)
+}
 func createOrder(w http.ResponseWriter, r *http.Request) {
  if r.Method!="POST" { jsonOut(w,405,map[string]string{"error":"method not allowed"}); return }
  var req OrderRequest
@@ -65,8 +100,8 @@ func main() {
  var err error; db,err=sql.Open("postgres",dsn); if err!=nil { log.Fatal(err) }; db.SetMaxOpenConns(10)
  addr:=os.Getenv("REDIS_ADDR"); if addr=="" { addr="localhost:6379" }; rdb=redis.NewClient(&redis.Options{Addr:addr})
  http.HandleFunc("/health",health)
- http.HandleFunc("/info",func(w http.ResponseWriter,r *http.Request){ jsonOut(w,200,map[string]string{"service":"orders-api","version":version,"pod":os.Getenv("HOSTNAME")}) })
- http.HandleFunc("/orders",createOrder)
+ http.HandleFunc("/info",func(w http.ResponseWriter,r *http.Request){ jsonOut(w,200,map[string]any{"service":"orders-api","version":version,"pod":os.Getenv("HOSTNAME"),"status":"ok","timestamp":time.Now().UTC().Format(time.RFC3339)}) })
+ http.HandleFunc("/orders",handleOrders)
  http.HandleFunc("/orders/",getOrder)
  log.Fatal(http.ListenAndServe(":8080",nil))
 }
