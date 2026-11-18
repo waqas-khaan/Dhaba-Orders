@@ -1,1 +1,18 @@
 .env.production
+
+# Dependencies
+stats-api/vendor/
+
+# Laravel generated files
+stats-api/bootstrap/cache/*
+!stats-api/bootstrap/cache/.gitignore
+stats-api/storage/logs/
+stats-api/storage/framework/cache/
+stats-api/storage/framework/sessions/
+stats-api/storage/framework/views/
+
+# PHP testing
+stats-api/.phpunit.result.cache
+
+# Java build files
+kitchen-worker/target/

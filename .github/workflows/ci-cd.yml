@@ -1,0 +1,121 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Go tests
+        run: cd orders-api && go vet ./... && go test ./...
+
+      - name: Python tests
+        run: |
+          cd menu-api
+          pip install -r requirements.txt -r requirements-dev.txt
+          pytest
+
+      - name: Java tests
+        run: cd kitchen-worker && mvn -q test
+
+      - name: Frontend lint
+        run: cd web && npm ci && npx eslint .
+
+      - name: PHP tests
+        run: |
+          cd stats-api
+          composer install
+          vendor/bin/phpunit
+
+      - name: Slack notification
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text":"TEST ${{ job.status }} | ${{ github.sha }}"}' \
+              "$SLACK_WEBHOOK"
+          fi
+
+  build:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push ECR images
+        run: |
+          REG=139716594109.dkr.ecr.ap-southeast-2.amazonaws.com
+
+          aws ecr get-login-password --region ap-southeast-2 | \
+            docker login --username AWS --password-stdin "$REG"
+
+          for s in web menu-api orders-api kitchen-worker stats-api ops-monitor; do
+            docker build -t "$REG/dhaba/$s:${{ github.sha }}" "./$s"
+            docker push "$REG/dhaba/$s:${{ github.sha }}"
+          done
+
+      - name: Slack notification
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text":"BUILD ${{ job.status }} | ${{ github.sha }}"}' \
+              "$SLACK_WEBHOOK"
+          fi
+
+  deploy-staging:
+    needs: build
+    runs-on: self-hosted
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy staging
+        run: ./scripts/deploy.sh staging ${{ github.sha }}
+
+      - name: Slack notification
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text":"STAGING ${{ job.status }} | ${{ github.sha }}"}' \
+              "$SLACK_WEBHOOK"
+          fi
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: self-hosted
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy production
+        run: ./scripts/deploy.sh production ${{ github.sha }}
+
+      - name: Slack notification
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text":"PRODUCTION ${{ job.status }} | ${{ github.sha }}"}' \
+              "$SLACK_WEBHOOK"
+          fi
