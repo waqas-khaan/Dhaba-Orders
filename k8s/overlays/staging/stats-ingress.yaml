@@ -19,6 +19,6 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: stats-api
+                name: web
                 port:
-                  number: 8081
+                  number: 80

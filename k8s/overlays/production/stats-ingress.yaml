@@ -19,13 +19,13 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: stats-api
+                name: web
                 port:
-                  number: 8081
+                  number: 80
           - path: /api/heath(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
-                name: stats-api
+                name: web
                 port:
-                  number: 8081
+                  number: 80
