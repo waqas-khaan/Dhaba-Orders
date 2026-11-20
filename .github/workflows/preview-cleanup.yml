@@ -26,7 +26,7 @@ jobs:
             exit 0
           fi
           echo "NAMESPACE=preview-$SLUG" >> "$GITHUB_ENV"
-          echo "PREVIEW_HOST=br-$SLUG.falconsoftwares.com" >> "$GITHUB_ENV"
+          echo "PREVIEW_HOST=$SLUG.falconsoftwares.com" >> "$GITHUB_ENV"
 
       - name: Delete namespace
         run: |

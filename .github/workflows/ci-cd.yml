@@ -202,7 +202,7 @@ jobs:
             exit 1
           fi
           echo "NAMESPACE=preview-$SLUG" >> "$GITHUB_ENV"
-          echo "PREVIEW_HOST=br-$SLUG.falconsoftwares.com" >> "$GITHUB_ENV"
+          echo "PREVIEW_HOST=$SLUG.falconsoftwares.com" >> "$GITHUB_ENV"
 
       - name: Deploy preview to its own namespace
         run: |
