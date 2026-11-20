@@ -25,7 +25,7 @@ case "$ENV" in
             echo "Invalid namespace: $NS"
             exit 1
         fi
-        if ! [[ "$HOST" =~ ^br-[a-z0-9-]{1,40}\.falconsoftwares\.com$ ]]; then
+        if ! [[ "$HOST" =~ ^[a-z0-9][a-z0-9-]{0,39}\.falconsoftwares\.com$ ]]; then
             echo "Invalid host: $HOST"
             exit 1
         fi
