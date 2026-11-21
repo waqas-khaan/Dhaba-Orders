@@ -1,0 +1,225 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+  push:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run All Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Go tests
+        run: |
+          cd orders-api
+          go vet ./...
+          go test ./...
+
+      - name: Python tests
+        run: |
+          cd menu-api
+          pip install -r requirements.txt -r requirements-dev.txt
+          python -m pytest
+
+      - name: Java tests
+        run: |
+          cd kitchen-worker
+          mvn -q test
+
+      - name: Frontend lint
+        run: |
+          cd web
+          npm ci
+          npx eslint .
+
+      - name: PHP tests
+        run: |
+          cd stats-api
+          composer install --no-interaction
+          vendor/bin/phpunit
+
+      - name: Slack notification
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST \
+              -H 'Content-type: application/json' \
+              --data '{"text":"TEST ${{ job.status }} | ${{ github.ref_name }} | ${{ github.sha }}"}' \
+              "$SLACK_WEBHOOK"
+          fi
+
+  build:
+    name: Build and Push Docker Images
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to AWS ECR
+        run: |
+          REG=139716594109.dkr.ecr.ap-southeast-2.amazonaws.com
+
+          aws ecr get-login-password --region ap-southeast-2 |
+            docker login --username AWS --password-stdin "$REG"
+
+      - name: Build and push all microservices
+        run: |
+          REG=139716594109.dkr.ecr.ap-southeast-2.amazonaws.com
+          TAG="${{ github.sha }}"
+
+          for s in web menu-api orders-api kitchen-worker stats-api; do
+            echo "Building $s..."
+
+            if [ "$s" = "stats-api" ]; then
+              docker build \
+                --build-arg APP_VERSION="$TAG" \
+                -t "$REG/dhaba-orders-$s:$TAG" \
+                "./$s"
+            else
+              docker build \
+                -t "$REG/dhaba-orders-$s:$TAG" \
+                "./$s"
+            fi
+
+            docker push "$REG/dhaba-orders-$s:$TAG"
+          done
+
+      - name: Build and push ops-monitor
+        run: |
+          REG=139716594109.dkr.ecr.ap-southeast-2.amazonaws.com
+          TAG="${{ github.sha }}"
+
+          docker build \
+            -f ops-monitor/Dockerfile \
+            -t "$REG/dhaba-orders-ops-monitor:$TAG" \
+            .
+
+          docker push "$REG/dhaba-orders-ops-monitor:$TAG"
+
+      - name: Slack notification
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST \
+              -H 'Content-type: application/json' \
+              --data '{"text":"BUILD ${{ job.status }} | ${{ github.ref_name }} | ${{ github.sha }}"}' \
+              "$SLACK_WEBHOOK"
+          fi
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: self-hosted
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy staging
+        run: |
+          ./scripts/deploy.sh staging "${{ github.sha }}"
+
+      - name: Slack notification
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST \
+              -H 'Content-type: application/json' \
+              --data '{"text":"STAGING ${{ job.status }} | ${{ github.sha }}"}' \
+              "$SLACK_WEBHOOK"
+          fi
+
+  deploy-production:
+    name: Deploy to Production
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy production
+        run: |
+          ./scripts/deploy.sh production "${{ github.sha }}"
+
+      - name: Slack notification
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST \
+              -H 'Content-type: application/json' \
+              --data '{"text":"PRODUCTION ${{ job.status }} | ${{ github.sha }}"}' \
+              "$SLACK_WEBHOOK"
+          fi
+
+  deploy-preview:
+    name: Deploy Branch Preview
+    needs: build
+    if: >
+      github.event_name == 'push' &&
+      github.ref != 'refs/heads/dev' &&
+      github.ref != 'refs/heads/main'
+    runs-on: self-hosted
+    environment: preview
+    concurrency:
+      group: preview-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute branch slug
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          SLUG=$(echo "$BRANCH" | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]/-/g; s/--*/-/g; s/^-//; s/-$//' | cut -c1-30 | sed 's/-$//')
+          if [ -z "$SLUG" ]; then
+            echo "Branch name produced an empty slug" >&2
+            exit 1
+          fi
+          echo "NAMESPACE=preview-$SLUG" >> "$GITHUB_ENV"
+          echo "PREVIEW_HOST=$SLUG.falconsoftwares.com" >> "$GITHUB_ENV"
+
+      - name: Deploy preview to its own namespace
+        run: |
+          ./scripts/deploy.sh preview "${{ github.sha }}"
+
+      - name: Create nginx vhost with wildcard SSL
+        run: |
+          sudo /usr/local/bin/preview-vhost create "$PREVIEW_HOST"
+
+      - name: Slack notification
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST \
+              -H 'Content-type: application/json' \
+              --data "{\"text\":\"PREVIEW ${{ job.status }} | https://${PREVIEW_HOST}\"}" \
+              "$SLACK_WEBHOOK"
+          fi
