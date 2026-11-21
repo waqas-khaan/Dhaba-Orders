@@ -8,7 +8,8 @@ on:
 
   push:
     branches:
-      - '**'
+      - dev
+      - main
 
 permissions:
   contents: read
@@ -175,4 +176,3 @@ jobs:
               --data '{"text":"PRODUCTION ${{ job.status }} | ${{ github.sha }}"}' \
               "$SLACK_WEBHOOK"
           fi
-
