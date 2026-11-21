@@ -14,7 +14,7 @@ case "$ENV" in
         NS="$ENV"
         OVERLAY="k8s/overlays/$ENV"
         ;;
-<<<<<<< HEAD
+
     preview)
         NS="${NAMESPACE:?NAMESPACE required for preview}"
         HOST="${PREVIEW_HOST:?PREVIEW_HOST required for preview}"
@@ -28,10 +28,7 @@ case "$ENV" in
             echo "Invalid host: $HOST"
             exit 1
         fi
-        ;;
-=======
->>>>>>> 52514ee (revert changes)
-    *)
+        
         echo "Invalid environment: $ENV. Use staging or production."
         exit 1
         ;;
