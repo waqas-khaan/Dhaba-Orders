@@ -6,7 +6,7 @@ import './style.css';
 function getDishMeta(dish) {
   const name = dish.name.toLowerCase();
   if (name.includes('karahi')) {
-    return { icon: '🥘', tag: 'Chef Special', spice: '🌶️🌶️ Medium Hot', time: '18 min' };
+    return { icon: '🥘', tag: 'Chef Special', spice: '🌶️ Medium Hot', time: '18 min' };
   }
   if (name.includes('biryani')) {
     return { icon: '🍚', tag: 'Most Popular', spice: '🌶️ Spicy & Fragrant', time: '12 min' };
@@ -416,7 +416,7 @@ function App() {
                     <div className="dish-card-body">
                       <h3 className="dish-title">{dish.name}</h3>
                       <p className="dish-desc">{dish.description || 'Prepared with authentic spices and fresh local ingredients.'}</p>
-                      
+
                       <div className="dish-details">
                         <span className="spice-tag">{meta.spice}</span>
                         <span className="time-tag">⏱️ {meta.time}</span>
